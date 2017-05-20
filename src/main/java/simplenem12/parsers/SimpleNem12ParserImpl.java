@@ -26,16 +26,7 @@ public class SimpleNem12ParserImpl implements SimpleNem12Parser {
 
     @Override
     public Collection<MeterRead> parseSimpleNem12(String simpleNem12FilePath) throws ApplicationException {
-        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
 
-
-        csvReader(simpleNem12FilePath);
-
-        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
-        return meterReads;
-    }
-
-    public void csvReader(String simpleNem12FilePath) throws ApplicationException {
         log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
 
         try (CSVReader reader = new CSVReader(new FileReader(simpleNem12FilePath))) {
@@ -44,44 +35,62 @@ public class SimpleNem12ParserImpl implements SimpleNem12Parser {
                 switch (nextLine[0]) {
 
                     case "100":
-                        do100Stuff(nextLine, i);
+                        init(nextLine, i);
                         break;
 
                     case "200":
-                        do200Stuff(nextLine[1]);
+                        readBlock(nextLine[1]);
                         break;
 
                     case "300":
-                        do300Stuff(nextLine);
+                        readRecord(nextLine);
                         break;
 
                     case "900":
-                        do900Stuff(nextLine);
-                        return;
+                        // do900Stuff(nextLine); // not needed
+                        log.debug("Reached at end of file :: " + nextLine[0]);
+                        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
+                        return meterReads;
                 }
-
             }
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
 
         } catch (IOException e1) {
-            // TODO Auto-generated catch block
             e1.printStackTrace();
         }
-        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
+
+        log.error("File format error. Record 900 not found!");
+        throw new ApplicationException("File format error. Record 900 not found!");
     }
 
-    private void do900Stuff(String[] nextLine) {
+    private void init(String[] nextLine, int i) throws ApplicationException {
         log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
 
+        // validation to check if record type 100 is read after first line
+        if (i != 0) {
+            log.error("File format error. Record Type 100 read at line num # " + i);
+            throw new ApplicationException("File format error. Record Type 100 read at line num # " + i);
+        }
 
-        log.debug("Reached at end of file :: " + nextLine[0]);
+        log.debug("Reached at start of file :: " + nextLine[0]);
+
+        meterReads = new ArrayList();
 
         log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
     }
 
-    private void do300Stuff(String[] nextLine) {
+    private void readBlock(String nmi) {
+        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
+
+        log.debug("New Meter Read Block started :: " + nmi);
+
+        meterReads.add(new MeterRead(nmi, EnergyUnit.KWH));
+
+        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
+    }
+
+    private void readRecord(String[] nextLine) {
         log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
         log.debug("New Meter Read record started :: " + nextLine[0]);
 
@@ -98,39 +107,14 @@ public class SimpleNem12ParserImpl implements SimpleNem12Parser {
         log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
     }
 
-    private void do200Stuff(String nmi) {
+/*
+    private void do900Stuff(String[] nextLine) {
         log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
 
-        log.debug("New Meter Read Block started :: " + nmi);
-
-        meterReads.add(new MeterRead(nmi, EnergyUnit.KWH));
-
-        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
-
-    }
-
-    private void do100Stuff(String[] nextLine, int i) throws ApplicationException {
-        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
-
-        // validation to check if record type 100 is read after first line
-        if (i != 0) {
-            log.error("Record Type 100 read at line num # " + i);
-            throw new ApplicationException("Record Type 100 read at line num # " + i);
-        }
-
-        log.debug("Reached at start of file :: " + nextLine[0]);
-
-        meterReads = new ArrayList();
+        log.debug("Reached at end of file :: " + nextLine[0]);
 
         log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
     }
-
-    /*private String startsWith(String nextLine) {
-        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " starts");
-        
-
-        log.trace(Thread.currentThread().getStackTrace()[1].getMethodName() + " ends");
-        return nextLine.split(",")[0];
-    }*/
+*/
 
 }
