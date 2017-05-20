@@ -14,7 +14,7 @@ import java.util.Collection;
 public class TestHarness {
 
     public static void main(String[] args) {
-        String simpleNem12FilePath = "src/main/resources/SimpleNem12.csv";
+        String simpleNem12FilePath = args[0];//"src/main/resources/SimpleNem12.csv";
 
         // Uncomment below to try out test harness.
         Collection<MeterRead> meterReads = null;
